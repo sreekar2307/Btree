@@ -50,6 +50,15 @@ func TestBtree_GetMax(t *testing.T) {
 	})
 }
 
+func TestBtree_GetMin(t *testing.T) {
+	t.Run("returns min of the array keys", func(t *testing.T) {
+		tree := getADummyBTree(2, 3)
+		if min := tree.getMin(tree.root, new(pageEntryStack)); min != Int(-3) {
+			t.Errorf("max should have been %d got %d", 3, min)
+		}
+	})
+}
+
 func TestBtree_Delete(t *testing.T) {
 	t.Run("remove a key", func(t *testing.T) {
 		tree := getADummyBTree(2, 3)

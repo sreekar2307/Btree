@@ -188,7 +188,7 @@ func Test_transferSibling(t *testing.T) {
 			}
 		})
 
-		t.Run("pageLeftSibling tail should be 5", func(t *testing.T) {
+		t.Run("pageLeftSibling tail should be 4", func(t *testing.T) {
 			if pageLeftSibling.tail.key != Int(4) {
 				t.Errorf("expected pageLeftSibling tail to have %d keys got %d", 4,
 					pageLeftSibling.tail.key)
@@ -326,9 +326,7 @@ func TestPage_scan(t *testing.T) {
 			page := getADummyIntPage([]int{2, 19, 13, 20})
 			firstEntry := page.head.next
 			firstEntry.pagePtr = getADummyIntPage([]int{10, 11})
-			e := page.scan(&entry{
-				key: Int(12),
-			})
+			e := page.scan(Int(12))
 			if e.pagePtr != firstEntry.pagePtr {
 				t.Errorf("expected page ptr to be %p got %p", firstEntry.pagePtr, e.pagePtr)
 			}
@@ -340,9 +338,7 @@ func TestPage_scan(t *testing.T) {
 			page := getADummyIntPage([]int{19})
 			firstEntry := page.head.next
 			firstEntry.pagePtr = getADummyIntPage([]int{21, 23})
-			e := page.scan(&entry{
-				key: Int(20),
-			})
+			e := page.scan(Int(20))
 			if e.pagePtr != firstEntry.pagePtr {
 				t.Errorf("expected page ptr to be %p got %p", firstEntry.pagePtr, e.pagePtr)
 			}
@@ -353,9 +349,7 @@ func TestPage_scan(t *testing.T) {
 		t.Run("when min entry page ptr is not nil", func(t *testing.T) {
 			page := getADummyIntPage([]int{19})
 			page.head.pagePtr = getADummyIntPage([]int{13, 14})
-			e := page.scan(&entry{
-				key: Int(17),
-			})
+			e := page.scan(Int(17))
 			if e.pagePtr != page.head.pagePtr {
 				t.Errorf("expected page ptr to be %p got %p", page.head.pagePtr, e.pagePtr)
 			}

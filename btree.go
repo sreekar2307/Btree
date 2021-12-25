@@ -15,7 +15,7 @@ func (bt *Btree) Insert(k Key) {
 	u := &entry{key: k}
 	for current != nil {
 		stack.push(current)
-		pos := current.scan(u)
+		pos := current.scan(u.key)
 		if pos == nil {
 			current = nil
 		} else {
@@ -58,9 +58,10 @@ func (bt *Btree) Delete(k Key) {
 	bt.search(k, &stack)
 	pet := stack.pop()
 	if pet.e.pagePtr != nil {
-		bt.getMax(pet.e.pagePtr, &stack)
-		max := stack.pop()
-		pet.e, max.e = max.e, pet.e
+		bt.getMin(pet.e.pagePtr, &stack)
+		min := stack.pop()
+		// replace with the minimum in right sub Tree
+		pet.e.key, min.e.key = min.e.key, pet.e.key
 	}
 	pet.p.remove(pet.e)
 	leafPagePtr := pet.p
@@ -109,17 +110,25 @@ func (bt *Btree) getMax(p *page, stack *pageEntryStack) Key {
 	return stack.peek().e.key
 }
 
+func (bt *Btree) getMin(p *page, stack *pageEntryStack) Key {
+	for p != nil {
+		pet := &pageEntryTuple{p, p.head.next}
+		stack.push(pet)
+		p = p.head.pagePtr
+	}
+	return stack.peek().e.key
+}
+
 func (bt *Btree) search(k Key, stack *pageEntryStack) bool {
-	u := &entry{key: k}
 	curr := bt.root
 	var (
 		e  *entry
 		ok bool
 	)
 	for !ok && (e == nil || e.pagePtr != nil) {
-		e, ok = curr.find(u)
+		e, ok = curr.find(k)
 		if !ok {
-			e = curr.scan(u)
+			e = curr.scan(k)
 		}
 		pet := &pageEntryTuple{curr, e}
 		if !ok {

@@ -5,25 +5,20 @@ import (
 	"strings"
 )
 
-type Key interface {
-	Less(than Key) bool
-}
-
 type page struct {
 	head *entry
 	tail *entry
 	keys int
 }
 
-// returns the first entry's page pointer which is prev to an entry which is just greater than or equal
-// If matched entry's pagePtr is nil then return current
+// returns the entry's which is prev to the first entry which is just greater than or equal to the input entry
 
-func (p *page) scan(e *entry) (entry *entry) {
+func (p *page) scan(k Key) (entry *entry) {
 	if p.head != nil {
 		itr := p.iterator()
 		prevItrEntry, itrEntry := itr.next(), itr.next()
 		for itrEntry != nil {
-			if e.key.Less(itrEntry.key) {
+			if k.Less(itrEntry.key) || equalKeys(k, itrEntry.key) {
 				entry = prevItrEntry
 				break
 			}
@@ -37,19 +32,23 @@ func (p *page) scan(e *entry) (entry *entry) {
 	return entry
 }
 
-// returns true if it finds the entry which is equal to or else return's false
+// returns true if it finds the entry which is equal to or else return's false and the output returned by the scan
 
-func (p *page) find(e *entry) (*entry, bool) {
-	itr := p.iterator()
-	itr.next()
-	itrEntry := itr.next()
-	for itrEntry != nil {
-		if !e.key.Less(itrEntry.key) && !itrEntry.key.Less(e.key) {
-			return itrEntry, true
-		}
-		itrEntry = itr.next()
+func (p *page) find(k Key) (*entry, bool) {
+	fitPos := p.scan(k)
+	var matchedEntry *entry
+	{
+		itr := fitPos.iterator()
+		itr.next()
+		matchedEntry = itr.next()
 	}
-	return nil, false
+	if matchedEntry == nil {
+		return fitPos, false
+	}
+	if equalKeys(matchedEntry.key, k) {
+		return matchedEntry, true
+	}
+	return fitPos, false
 }
 
 // inserts an entry at pos which is just greater than or equal
@@ -80,21 +79,22 @@ func (p *page) insert(e *entry) {
 	p.keys++
 }
 
-func (p *page) remove(e *entry) {
-	assert(e.key == nil)
-	_, ok := p.find(e)
-	assert(!ok)
-	var prevEntry *entry
-	{
-		itr := e.iterator()
-		itr.prev()
-		prevEntry = itr.prev()
+func (p *page) remove(e *entry) bool {
+	itr := p.iterator()
+	prevItrEntry, itrEntry := itr.next(), itr.next()
+	for itrEntry != nil {
+		if itrEntry == e {
+			prevItrEntry.removeNext()
+			if p.tail == itrEntry {
+				p.tail = prevItrEntry
+			}
+			p.keys--
+			return true
+		}
+		prevItrEntry = itrEntry
+		itrEntry = itr.next()
 	}
-	prevEntry.removeNext()
-	if p.tail == e {
-		p.tail = prevEntry
-	}
-	p.keys--
+	return false
 }
 
 func (p *page) splitMiddle() (*entry, *page) {
