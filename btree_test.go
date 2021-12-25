@@ -1,7 +1,6 @@
 package btree
 
 import (
-	"reflect"
 	"testing"
 )
 
@@ -35,8 +34,29 @@ func TestBtree_LeftMajorOrder(t *testing.T) {
 	t.Run("returns array of keys in increasing order", func(t *testing.T) {
 		tree := getADummyBTree(2, 3)
 		lmo := tree.LeftMajorOrder()
-		expectedOrder := []Int{-3, -2, -1, 0, 1, 2, 3}
-		if reflect.DeepEqual(lmo, expectedOrder) {
+		expectedOrder := []int{-3, -2, -1, 0, 1, 2, 3}
+		if !matchWithIntArray(lmo, expectedOrder) {
+			t.Errorf("order should have been %v got %v", expectedOrder, lmo)
+		}
+	})
+}
+
+func TestBtree_GetMax(t *testing.T) {
+	t.Run("returns max of the array keys", func(t *testing.T) {
+		tree := getADummyBTree(2, 3)
+		if max := tree.getMax(tree.root, new(pageEntryStack)); max != Int(3) {
+			t.Errorf("max should have been %d got %d", 3, max)
+		}
+	})
+}
+
+func TestBtree_Delete(t *testing.T) {
+	t.Run("remove a key", func(t *testing.T) {
+		tree := getADummyBTree(2, 3)
+		tree.Delete(Int(1))
+		expectedOrder := []int{-3, -2, -1, 0, 2, 3}
+		lmo := tree.LeftMajorOrder()
+		if !matchWithIntArray(lmo, expectedOrder) {
 			t.Errorf("order should have been %v got %v", expectedOrder, lmo)
 		}
 	})
@@ -46,8 +66,22 @@ func getADummyBTree(deg, k int) *Btree {
 	tree := &Btree{
 		degree: deg,
 	}
-	for i:=-k;i<=k;i++ {
+	for i := -k; i <= k; i++ {
 		tree.Insert(Int(i))
 	}
 	return tree
+}
+
+func matchWithIntArray(got []Key, expected []int) bool {
+	match := len(got) == len(expected)
+	if !match {
+		return false
+	}
+	for i, v := range got {
+		if v.(Int) != Int(expected[i]) {
+			match = false
+			break
+		}
+	}
+	return match
 }

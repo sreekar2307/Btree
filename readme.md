@@ -7,7 +7,7 @@
 - Contains a field called as k
 - Less Function for comparing the keys
 - Method Insert(k Key)
-    - child <- root
+  - child <- root
     - current <- child
     - stack <- []Page{current}
     - u <- Entry{key: k}
@@ -15,34 +15,80 @@
     - child <- scan(current, u); stack.push(child)
     - child = stack.pop()
     - label:
-        - insert(current, u)
-        - if !IsSafe(current)
-            - middleEntry, pageRight := SplitMiddle(current)
-            - pageRight.head.entry.pagePtr = middleEntry.pagePtr
-            - middleEntry.pagePtr = pageRight
-            - u <- middleEntry
-            - current <- stack.pop
-            - if current is nil
-                - page := Newpage()
-                - insert(page, u)
-                - root <- page
-            - else goto label
+      - insert(current, u)
+      - if !IsSafe(current)
+        - middleEntry, pageRight := SplitMiddle(current)
+        - pageRight.head.entry.pagePtr = middleEntry.pagePtr
+        - middleEntry.pagePtr = pageRight
+        - u <- middleEntry
+        - current <- stack.pop
+        - if current is nil
+          - page := New(Page)
+          - insert(page, u)
+          - root <- page
+        - else goto label
     - else
-        - stack.push(pos)
+      - stack.push(pos)
+- Method Delete(k Key)
+  - initialize(stack of <Entry, PagePtr>)
+  - entry, page := Find(k, stack)
+  - rightSubtreeMin := GetMax(entry.pagePtr, stack)
+  - Replace(entry, rightSubtreeMin)
+  - LeafPagePtr, _ <- stack.pop()
+  - removeEntry(LeafPagePtr, entry)
+  - label:
+  - if !IsSafe(LeafPagePtr)
+    - parentLeafPtr, parentEntry = stack.pop()
+    - if concatSiblingAcross(parentEntry, parentLeafPtr)
+      - LeafPagePtr = parentLeafPtr
+      - goto label:
+    - else // can underflow
+      - entry := SiblingTransfer(parentEntry, parentLeafPtr)
+      - LeafPagePtr.insert(entry)
+- Method concatSiblingAcross(entry, pagePtr) bool
+  - left := entry.prev.pagePtr
+  - right := entry.pagePtr
+  - if left.keys + right.keys < 2 *k 
+    - concatSiblingLeft(entry, pagePtr)
+    - return true
+  - left = entry.pagePtr
+  - right = entry.next.pagePtr
+  - if left.keys + right.keys < 2 *k
+    - concatSiblingRight(entry, pagePtr)
+    - return true
+  - return false 
 ### type Page
 - contains a doubly linked list so that it can be useful to find both right and left siblings
 - method to add a new Entry returns the same Entry
 - contains a field called as length 
 - As the adding always happens on the leaf node
-- Scan
-    - returns the first Entry's page pointer which is just greater or than or equal
-    - If matched Entry's pagePtr is nil then return current
-- Insert
-    - inserts an Entry at pos which is just greater than or equal 
-- Split Middle
-    - creates a new Page with mid+1..n entries in it
-    - removes mid+1..n entries in it
-    - return mid Entry and new Page ptr
+- Method Scan
+  - returns the first Entry's page pointer which is just greater or than or equal
+  - If matched Entry's pagePtr is nil then return current
+- Method Insert
+  - inserts an Entry at pos which is just greater than or equal 
+- Method Split Middle
+  - creates a new Page with mid+1..n entries in it
+  - removes mid+1..n entries in it
+  - return's mid entry and new Page ptr
+- Method concatSiblingLeft(entry, pagePtr) private
+  - left := entry.prev.pagePtr.tail
+  - right := entry.pagePtr.head.next
+  - rightPagePtr := entry.pagePtr.head.pagePtr
+  - entry.prev = left
+  - entry.next = right
+  - right.prev = entry
+  - entry.pagePtr = rightPagePtr
+  - left.prev = entry
+- Method concatSiblingRight(entry, pagePtr) private
+  - left := entry.pagePtr.tail
+  - right := entry.next.pagePtr.head.next
+  - rightPagePtr := entry.next.pagePtr.head.pagePtr
+  - entry.prev = left
+  - entry.next = right
+  - right.prev = entry
+  - entry.pagePtr = rightPagePtr
+  - left.prev = entry
 ### type Entry
 - contains a key and the page ptr key
 ### type interface Key
