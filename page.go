@@ -80,6 +80,7 @@ func (p *page) insert(e *entry) {
 }
 
 func (p *page) remove(e *entry) bool {
+	assert(e.key == nil)
 	itr := p.iterator()
 	prevItrEntry, itrEntry := itr.next(), itr.next()
 	for itrEntry != nil {
