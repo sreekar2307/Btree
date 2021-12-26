@@ -168,7 +168,7 @@ func concatSiblingLeft(p *page, e *entry) bool {
 		rightEntry = itr.next()
 	}
 	e.pagePtr = rightPageSibling.head.pagePtr
-	p.remove(e)
+	assert(!p.remove(e))
 	e.chopBoth()
 	combine(lspt, e, rightEntry)
 
@@ -195,7 +195,7 @@ func concatSiblingRight(p *page, e *entry) bool {
 	leftEntry := e.pagePtr.tail
 
 	e.pagePtr = reAttachablePagePtr
-	p.remove(e)
+	assert(!p.remove(e))
 	e.chopBoth()
 	combine(leftEntry, e, rightEntry)
 
@@ -221,6 +221,9 @@ func transferFromLeftSibling(e *entry, p *page) bool {
 	if leftPageSibling == nil {
 		return false
 	}
+	// remove e from page
+	assert(!p.remove(e))
+
 	// remove lspt from left sibling lspt left sibling page's tail
 	var lspt *entry
 	{
@@ -228,9 +231,8 @@ func transferFromLeftSibling(e *entry, p *page) bool {
 		leftPageSibling.remove(lspt)
 	}
 
-	// remove e from page and add lspt to p
+	// add lspt to p
 	lspt.pagePtr = e.pagePtr
-	p.remove(e)
 	p.insert(lspt)
 
 	// add e to right page sibling
@@ -248,6 +250,16 @@ func transferFromRightSibling(e *entry, p *page) bool {
 	}
 	var rsphk, rightToE *entry // rsphk right sibling page's head key
 	{
+		// get right to e
+		itr := e.iterator()
+		itr.next()
+		rightToE = itr.next()
+	}
+
+	// remove rightToE from p
+	assert(!p.remove(rightToE))
+
+	{
 		// remove rsphk form rightPageSibling
 		itr := rightPageSibling.iterator()
 		itr.next()
@@ -255,16 +267,8 @@ func transferFromRightSibling(e *entry, p *page) bool {
 		rightPageSibling.remove(rsphk)
 	}
 
-	{
-		// get right to e
-		itr := e.iterator()
-		itr.next()
-		rightToE = itr.next()
-	}
-
-	// remove rightToE from p and add rsphk to p
+	// add rsphk to p
 	rsphk.pagePtr = rightToE.pagePtr
-	p.remove(rightToE)
 	p.insert(rsphk)
 
 	// add rightToE to lefPageSibling
