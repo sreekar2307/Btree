@@ -56,10 +56,10 @@ func (p *page) find(k Key) (*entry, bool) {
 
 func (p *page) insert(e *entry) {
 	assert(e == nil)
-	e.makeSingle()
+	e.chopBoth()
 	if p.head == nil {
 		p.head = &entry{}
-		p.head.addNext(e)
+		p.head.friendRight(e)
 		p.tail = e
 	} else {
 		itr := p.iterator()
@@ -74,7 +74,7 @@ func (p *page) insert(e *entry) {
 		if itrEntry == nil {
 			p.tail = e
 		}
-		prevItrEntry.addNext(e)
+		prevItrEntry.friendRight(e)
 	}
 	p.keys++
 }
@@ -85,7 +85,7 @@ func (p *page) remove(e *entry) bool {
 	prevItrEntry, itrEntry := itr.next(), itr.next()
 	for itrEntry != nil {
 		if itrEntry == e {
-			prevItrEntry.removeNext()
+			prevItrEntry.unFriendRight()
 			if p.tail == itrEntry {
 				p.tail = prevItrEntry
 			}
@@ -110,16 +110,16 @@ func (p *page) splitMiddle() (*entry, *page) {
 
 	// copy mid+1 to n entries to right Page
 	midPlusOneEntry := itr.next()
-	midPlusOneEntry.makeFirst()
+	midPlusOneEntry.chopLeft()
 	rightPageHead := &entry{}
-	rightPageHead.join(midPlusOneEntry)
+	rightPageHead.holdHands(midPlusOneEntry)
 	rightPage := &page{
 		head: rightPageHead,
 		tail: p.tail,
 	}
 
-	prevItrEntry.makeLast()
-	itrEntry.makeSingle()
+	prevItrEntry.chopRight()
+	itrEntry.chopBoth()
 
 	// patch tails
 	p.tail = prevItrEntry
@@ -154,26 +154,26 @@ func leftSibling(e *entry) *page {
 	return prevEntry.pagePtr
 }
 
-func concatSiblingLeft(page *page, e *entry) bool {
+func concatSiblingLeft(p *page, e *entry) bool {
 	leftPageSibling := leftSibling(e)
 	if leftPageSibling == nil {
 		return false
 	}
 	rightPageSibling := e.pagePtr
-	leftEntry := leftPageSibling.tail
+	lspt := leftPageSibling.tail
 	var rightEntry *entry
 	{
 		itr := rightPageSibling.iterator()
 		itr.next()
 		rightEntry = itr.next()
 	}
-	reAttachablePagePtr := rightPageSibling.head.pagePtr
-
-	combine(leftEntry, e, rightEntry)
+	e.pagePtr = rightPageSibling.head.pagePtr
+	p.remove(e)
+	e.chopBoth()
+	combine(lspt, e, rightEntry)
 
 	leftPageSibling.keys += 1 + rightPageSibling.keys
-	e.pagePtr = reAttachablePagePtr
-	page.keys--
+	leftPageSibling.tail = rightPageSibling.tail
 	return true
 }
 
@@ -194,23 +194,25 @@ func concatSiblingRight(p *page, e *entry) bool {
 	}
 	leftEntry := e.pagePtr.tail
 
+	e.pagePtr = reAttachablePagePtr
+	p.remove(e)
+	e.chopBoth()
 	combine(leftEntry, e, rightEntry)
 
 	leftPageSibling.keys += 1 + rightPageSibling.keys
-	e.pagePtr = reAttachablePagePtr
-	p.keys--
+	leftPageSibling.tail = rightPageSibling.tail
 	return true
 }
 
 func combine(left, middle, right *entry) {
 	{
-		middle.makeSingle()
-		left.makeLast()
-		right.makeFirst()
+		middle.chopBoth()
+		left.chopRight()
+		right.chopLeft()
 	}
 
-	left.join(middle)
-	middle.join(right)
+	left.holdHands(middle)
+	middle.holdHands(right)
 }
 
 func transferFromLeftSibling(e *entry, p *page) bool {

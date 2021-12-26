@@ -60,11 +60,23 @@ func TestBtree_GetMin(t *testing.T) {
 }
 
 func TestBtree_Delete(t *testing.T) {
-	t.Run("remove a key", func(t *testing.T) {
+	t.Run("remove a safe key", func(t *testing.T) {
 		tree := getADummyBTree(2, 3)
 		tree.Delete(Int(1))
 		expectedOrder := []int{-3, -2, -1, 0, 2, 3}
 		lmo := tree.LeftMajorOrder()
+		if !matchWithIntArray(lmo, expectedOrder) {
+			t.Errorf("order should have been %v got %v", expectedOrder, lmo)
+		}
+	})
+
+	t.Run("remove an unsafe key", func(t *testing.T) {
+		tree := getADummyBTree(2, 5)
+		tree.Delete(Int(1))
+		tree.Delete(Int(2))
+		tree.Delete(Int(3))
+		lmo := tree.LeftMajorOrder()
+		expectedOrder := []int{-5, -4, -3, -2, -1, 0, 4, 5}
 		if !matchWithIntArray(lmo, expectedOrder) {
 			t.Errorf("order should have been %v got %v", expectedOrder, lmo)
 		}

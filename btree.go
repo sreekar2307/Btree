@@ -58,10 +58,12 @@ func (bt *Btree) Delete(k Key) {
 	bt.search(k, &stack)
 	pet := stack.pop()
 	if pet.e.pagePtr != nil {
+		stack.push(pet)
 		bt.getMin(pet.e.pagePtr, &stack)
 		min := stack.pop()
 		// replace with the minimum in right sub Tree
 		pet.e.key, min.e.key = min.e.key, pet.e.key
+		pet = min
 	}
 	pet.p.remove(pet.e)
 	leafPagePtr := pet.p
@@ -156,10 +158,10 @@ func (bt *Btree) concatSiblingAcross(p *page, e *entry) bool {
 func (bt *Btree) transferFromSibling(e *entry, p *page) {
 	ls := leftSibling(e)
 	rs := rightSibling(e)
-	if ls != nil && ls.keys > ls.keys+1 {
+	if ls != nil && ls.keys-1 >= bt.degree {
 		transferFromLeftSibling(e, p)
 	}
-	if rs != nil && rs.keys > rs.keys+1 {
+	if rs != nil && rs.keys-1 >= bt.degree {
 		transferFromRightSibling(e, p)
 	}
 }

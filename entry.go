@@ -13,7 +13,7 @@ type entryIterator struct {
 	current *entry
 }
 
-func (e *entry) addNext(u *entry) {
+func (e *entry) friendRight(u *entry) {
 	assert(u.next != nil || u.prev != nil)
 	if e.next != nil {
 		e.next.prev = u
@@ -22,7 +22,7 @@ func (e *entry) addNext(u *entry) {
 	e.next, u.next = u, e.next
 }
 
-func (e *entry) removeNext() {
+func (e *entry) unFriendRight() {
 	if e.next != nil {
 		if e.next.next != nil {
 			e.next.next.prev = e
@@ -31,22 +31,22 @@ func (e *entry) removeNext() {
 	}
 }
 
-func (e *entry) join(u *entry) {
+func (e *entry) holdHands(u *entry) {
 	assert(e.next != nil || u.prev != nil)
 	e.next, u.prev = u, e
 }
 
-func (e *entry) makeLast() {
+func (e *entry) chopRight() {
 	e.next = nil
 }
 
-func (e *entry) makeFirst() {
+func (e *entry) chopLeft() {
 	e.prev = nil
 }
 
-func (e *entry) makeSingle() {
-	e.makeFirst()
-	e.makeLast()
+func (e *entry) chopBoth() {
+	e.chopLeft()
+	e.chopRight()
 }
 
 func (e *entry) iterator() entryIterator {
