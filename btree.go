@@ -70,11 +70,10 @@ func (bt *Btree) Delete(k Key) {
 label:
 	if !bt.isSafe(leafPagePtr) {
 		pet = stack.pop()
-		if bt.concatSiblingAcross(pet.p, pet.e) {
+		if !bt.transferFromSibling(pet.e, pet.p) {
+			bt.concatSiblingAcross(pet.p, pet.e)
 			leafPagePtr = pet.p
 			goto label
-		} else {
-			bt.transferFromSibling(pet.e, pet.p)
 		}
 	}
 
@@ -155,13 +154,16 @@ func (bt *Btree) concatSiblingAcross(p *page, e *entry) bool {
 	return false
 }
 
-func (bt *Btree) transferFromSibling(e *entry, p *page) {
+func (bt *Btree) transferFromSibling(e *entry, p *page) bool {
 	ls := leftSibling(e)
 	rs := rightSibling(e)
 	if ls != nil && ls.keys-1 >= bt.degree {
 		transferFromLeftSibling(e, p)
+		return true
 	}
 	if rs != nil && rs.keys-1 >= bt.degree {
 		transferFromRightSibling(e, p)
+		return true
 	}
+	return false
 }
